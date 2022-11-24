@@ -7,14 +7,6 @@ using RollingFunctions, Statistics
 theme(:bright)
 
 # https://dm13450.github.io/2022/11/18/Trend-Following-with-ETFs.html
-
-alpaca_conn = JSON.parsefile(joinpath(pwd(), "./user_config/jjm_config.json"))
-AlpacaMarkets.auth(alpaca_conn["alpaca_login"]["key"], alpaca_conn["alpaca_login"]["secret"])
-
-spy = stock_bars("SPY", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1];
-bnd = stock_bars("BND", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1];
-gld = stock_bars("GLD", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1];
-
 function parse_date(t)
     Date(string(split(t, "T")[1]))
 end
@@ -24,12 +16,23 @@ function clean(df, x)
     @select(df, :Date, :Ticker, :c, :o, :NextOpen)
 end
 
-spy = clean(spy, "SPY")
-bnd = clean(bnd, "BND")
-gld = clean(gld, "GLD");
+function get_all_prices()
+    alpaca_conn = JSON.parsefile(joinpath(pwd(), "./user_config/jjm_config.json"))
+    AlpacaMarkets.auth(alpaca_conn["alpaca_login"]["key"], alpaca_conn["alpaca_login"]["secret"])
 
-allPrices = vcat(spy, bnd, gld)
-allPrices = sort(allPrices, :Date)
+    spy = stock_bars("SPY", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1]
+    bnd = stock_bars("BND", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1]
+    gld = stock_bars("GLD", "1Day"; startTime=now() - Year(10), limit=10000, adjustment="all")[1]
+
+    spy = clean(spy, "SPY")
+    bnd = clean(bnd, "BND")
+    gld = clean(gld, "GLD")
+
+    allPrices = vcat(spy, bnd, gld)
+    allPrices = sort(allPrices, :Date)
+end
+
+allPrices = get_all_prices()
 last(allPrices, 6)
 
 plot(plot(spy.Date, spy.c, label=:none, title="SPY"),
